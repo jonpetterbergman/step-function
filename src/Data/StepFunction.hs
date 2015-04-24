@@ -58,36 +58,15 @@ leq :: Ord x
 leq trans x = x_val trans <= x
 
 -- | Get the y value for a given x
-valAt' :: Ord x
+valAt :: Ord x
        => x
        -> StepFunction x y
-       -> (y,Maybe y)
-valAt' x (StepFunction def trans) =
+       -> y
+valAt x (StepFunction def trans) =
   case reverse $ takeWhile (`leq` x) trans of
-    [] -> (def,Nothing)  
-    [h] -> if left_closed h || x_val h < x then
-             (y_val h,Nothing)
-           else 
-             (def,Just $ y_val h)
-    (h:h':_) -> if left_closed h || x_val h < x then 
-                  (y_val h,Nothing) 
-                else 
-                  (y_val h',Just $ y_val h)
-
-valAt :: Ord x
-      => x
-      -> StepFunction x y
-      -> y
-valAt x st = fst $ valAt' x st
-
-interleaveSorted :: Ord a
-                 => [a]
-                 -> [a]
-                 -> [a]
-interleaveSorted xs []                     = xs
-interleaveSorted [] ys                     = ys
-interleaveSorted (x:xs) (y:ys) | x <= y    = x:(interleaveSorted xs (y:ys))
-                               | otherwise = y:(interleaveSorted (x:xs) ys) 
+    [] -> def
+    [h] -> if left_closed h || x_val h < x then y_val h else def
+    (h:h':_) -> if left_closed h || x_val h < x then y_val h else y_val h'
 
 -- | Merge two step function, such that the following should be true:
 --
@@ -136,7 +115,9 @@ mergeBoth f a b as bs =
       ntrans = Transition (x_val a) nval (left_closed a) in
   ntrans:(mergeT f (y_val a,y_val b) as bs)
 
-simplify :: Eq y
+simplify :: (Eq y,Eq x)
          => [Transition x y]
          -> [Transition x y]
-simplify = concat . map (take 1) . groupBy ((==) `on` y_val)
+simplify = simplifyY . simplifyX
+  where simplifyY = concat . map (take 1) . groupBy ((==) `on` y_val)
+        simplifyX = concat . map (take 1 . reverse) . groupBy ((==) `on` x_pos) 
