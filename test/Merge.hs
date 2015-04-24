@@ -1,4 +1,4 @@
-module Merge where
+module Merge (tests) where
 
 import           Distribution.TestSuite                    (Test)
 import           Distribution.TestSuite.QuickCheck         (testProperty)
@@ -30,8 +30,21 @@ mergeProp f x sf1 sf2 =
   counterexample ("merged: " ++ show merged) $
   valAt x merged === f (valAt x sf1) (valAt x sf2)
 
---tests :: [Test]
---tests = 
---  [testProperty "merge: valAt x (merge f sf1 sf2) == f (valAt x sf1) (valAt x sf2)"
---   ((\f x sf1 sf2 -> valAt x (merge f sf1 sf2) == f (valAt x sf1) (valAt x sf2)))]   
+tests :: IO [Test]
+tests = return [testProperty "merge: Int addition"
+                (mergeProp (+) :: Int -> StepFunction Int Int -> StepFunction Int Int -> Property),
+                testProperty "merge: Int subtraction"
+                (mergeProp (-) :: Int -> StepFunction Int Int -> StepFunction Int Int -> Property),
+                testProperty "merge: Int multiplication"
+                (mergeProp (*) :: Int -> StepFunction Int Int -> StepFunction Int Int -> Property),
+                testProperty "merge: Bool logical or"
+                (mergeProp (||) :: Bool -> StepFunction Bool Bool -> StepFunction Bool Bool -> Property),
+                testProperty "merge: Bool logical and"
+                (mergeProp (&&) :: Bool -> StepFunction Bool Bool -> StepFunction Bool Bool -> Property),
+                testProperty "merge: Double addition"
+                (mergeProp (+) :: Double -> StepFunction Double Double -> StepFunction Double Double -> Property),
+                testProperty "merge: Double subtraction"
+                (mergeProp (-) :: Double -> StepFunction Double Double -> StepFunction Double Double -> Property),
+                testProperty "merge: Double multiplication"
+                (mergeProp (*) :: Double -> StepFunction Double Double -> StepFunction Double Double -> Property)]
 
