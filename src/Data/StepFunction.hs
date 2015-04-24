@@ -73,7 +73,8 @@ valAt x (StepFunction def trans) =
 -- > valAt x (merge f sf1 sf2) == f (valAt x sf1) (valAt x sf2)
 --
 -- The resulting step function will be simplified, transitions that
--- don't change the y value will be eliminated.
+-- don't change the y value will be eliminated, and transitions that
+-- happen on the same x position will be eliminated.
 merge :: (Ord x,Eq c)
       => (a -> b -> c)
       -> StepFunction x a
