@@ -25,6 +25,9 @@ data Transition x y =
     , left_closed :: Bool -- ^ If True, y_val is for all x >= x_val, otherwise for all x > x_val
     } deriving (Eq,Show)
 
+instance Functor (Transition x) where
+  fmap f (Transition x y lc) = Transition x (f y) lc
+
 -- | A StepFunction is implemented as a default value
 -- and a sorted list of Transitions
 data StepFunction x y =
@@ -98,19 +101,40 @@ merge :: (Ord x,Eq c)
       -> StepFunction x b
       -> StepFunction x c
 merge f s1 s2 = 
-  StepFunction newDef $ simplify $ interleaveSorted (map mergeS2 $ transitions s1)
-                                                    (map mergeS1 $ transitions s2)
+  StepFunction newDef $ simplify $ mergeT f (def s1,def s2) (transitions s1) (transitions s2)
   where newDef = f (def s1) (def s2)
-        mergeS1 trans =
-          if left_closed trans then
-            Transition (x_val trans) (f (valAt (x_val trans) s1) $ y_val trans) True
-          else
-            Transition (x_val trans) (f ((uncurry fromMaybe) $ valAt' (x_val trans) s1) $ y_val trans) False
-        mergeS2 trans =
-          if left_closed trans then
-            Transition (x_val trans) (f (y_val trans) $ valAt (x_val trans) s2) True
-          else
-            Transition (x_val trans) (f (y_val trans) $ (uncurry fromMaybe) $ valAt' (x_val trans) s2) False
+
+x_pos :: Transition x y
+      -> (x,Bool)
+x_pos t = (x_val t,not $ left_closed t)
+
+mergeT :: Ord x
+       => (a -> b -> c)
+       -> (a,b)
+       -> [Transition x a]
+       -> [Transition x b]
+       -> [Transition x c]
+mergeT _ _       []     []             = []
+mergeT f (_,acc) as     []             = map (fmap (`f` acc)) as
+mergeT f (acc,_) []     bs             = map (fmap (acc `f`)) bs
+mergeT f acc     (a:at) (b:bt) | x_pos a < x_pos b = mergeLeft f acc a at (b:bt)
+                               | x_pos a > x_pos b = mergeRight f acc b (a:at) bt 
+                               | otherwise = mergeBoth f a b at bt
+
+mergeLeft f (a_acc,b_acc) a as bs =
+  let nval = f (y_val a) b_acc
+      ntrans = Transition (x_val a) nval (left_closed a) in
+  ntrans:(mergeT f (y_val a,b_acc) as bs)
+
+mergeRight f (a_acc,b_acc) b as bs =
+  let nval = f a_acc (y_val b)
+      ntrans = Transition (x_val b) nval (left_closed b) in
+   ntrans:(mergeT f (a_acc,y_val b) as bs)
+
+mergeBoth f a b as bs =
+  let nval = f (y_val a) (y_val b)
+      ntrans = Transition (x_val a) nval (left_closed a) in
+  ntrans:(mergeT f (y_val a,y_val b) as bs)
 
 simplify :: Eq y
          => [Transition x y]
