@@ -3,8 +3,12 @@
 
 name:                step-function
 version:             0.1.0.0
-synopsis:            Step Functions
--- description:         
+synopsis:            Step functions, staircase functions or piecewise constant functions
+description:         
+  Step functions, staircase functions or piecewise constant functions.
+
+  Implemented as a default value and a series of transitions. Supports
+  merging two step functions using a supplied merging function.
 homepage:            https://github.com/jonpetterbergman/step-function
 license:             BSD3
 license-file:        LICENSE
