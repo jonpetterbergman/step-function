@@ -44,7 +44,7 @@ instance (Ord x,Eq y) => Ord (Transition x y) where
                 | x_val t1 == x_val t2 && (not $ left_closed t1) && left_closed t2 = GT
                 | otherwise                                                        = EQ
 
--- | Smart constructor sorts the list of transitions
+-- | Smart constructor sorts and simplifies the list of transitions
 mkStepFunction :: (Ord x,Eq y)
                => y
                -> [Transition x y]
