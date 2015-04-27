@@ -7,6 +7,7 @@ module Data.StepFunction
   , StepFunction
   , mkStepFunction
   , valAt
+  , transitions
   , merge ) where
 
 import Data.List     (sort,
