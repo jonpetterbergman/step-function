@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 -- | 
--- Functions for dealing with step functions
+-- Functions for dealing with step functions.
 
 module Data.StepFunction
   ( Transition(..)
@@ -21,21 +21,21 @@ import Data.Maybe    (fromMaybe)
 data Transition x y =
   Transition 
     {
-      x_val :: x -- ^ The x value where the transition happens
-    , y_val :: y -- ^ The new y value
-    , left_closed :: Bool -- ^ If True, y_val is for all x >= x_val, otherwise for all x > x_val
+      x_val :: x -- ^ The x value where the transition happens.
+    , y_val :: y -- ^ The new y value.
+    , left_closed :: Bool -- ^ If True, y_val is for all x >= x_val, otherwise for all x > x_val.
     } deriving (Eq,Show)
 
 instance Functor (Transition x) where
   fmap f (Transition x y lc) = Transition x (f y) lc
 
 -- | A StepFunction is implemented as a default value
--- and a sorted list of Transitions
+-- and a sorted list of Transitions.
 data StepFunction x y =
   StepFunction 
     {
-      def :: y
-    , transitions :: [Transition x y]
+      def :: y -- ^ The default value.
+    , transitions :: [Transition x y] -- ^ The transitions. 
     } deriving (Eq,Show)
 
 instance (Ord x,Eq y) => Ord (Transition x y) where
@@ -45,7 +45,7 @@ instance (Ord x,Eq y) => Ord (Transition x y) where
                 | x_val t1 == x_val t2 && (not $ left_closed t1) && left_closed t2 = GT
                 | otherwise                                                        = EQ
 
--- | Smart constructor sorts and simplifies the list of transitions
+-- | Smart constructor sorts and simplifies the list of transitions.
 mkStepFunction :: (Ord x,Eq y)
                => y
                -> [Transition x y]
@@ -58,7 +58,7 @@ leq :: Ord x
     -> Bool
 leq trans x = x_val trans <= x
 
--- | Get the y value for a given x
+-- | Get the y value for a given x.
 valAt :: Ord x
        => x
        -> StepFunction x y
