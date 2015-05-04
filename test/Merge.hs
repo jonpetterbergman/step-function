@@ -12,6 +12,7 @@ import           Test.QuickCheck.Arbitrary                 (Arbitrary(..))
 import           Test.QuickCheck.Property                  ((===),
                                                             Property,
                                                             counterexample)
+import           Control.Applicative                       ((<*>),(<$>))
 
 instance (Arbitrary x,Arbitrary y) => Arbitrary (Transition x y) where
   arbitrary = Transition <$> arbitrary <*> arbitrary <*> arbitrary
