@@ -38,6 +38,9 @@ data StepFunction x y =
     , transitions :: [Transition x y] -- ^ The transitions. 
     } deriving (Eq,Show)
 
+instance Functor (StepFunction x) where
+  fmap f (StepFunction d ts) = StepFunction (f d) (map (fmap f) ts)
+
 instance (Ord x,Eq y) => Ord (Transition x y) where
   compare t1 t2 | x_val t1 < x_val t2                                              = LT
                 | x_val t1 > x_val t2                                              = GT
