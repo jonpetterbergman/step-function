@@ -8,3 +8,5 @@ Build with ghc 7.8.4.
 StepFunction is now an instance of Functor.
 # v0.1.1.1
 Build with GHC 8.0.1.
+# v0.1.1.2
+Build with GHC 8.2.2
