@@ -23,11 +23,10 @@
 #define LIFTED_FUNCTOR_CLASSES 1
 #endif
 
-module Data.Function.Step (
+module Data.Function.Step.Discrete.Open (
     -- * Step Function
     -- $setup
     SF (..),
-    Bound (..),
     -- * Construction
     constant,
     step,
@@ -37,6 +36,9 @@ module Data.Function.Step (
     -- * Operators
     (!),
     values,
+    -- * Conversions
+    toDense,
+    fromDense,
     -- * Debug
     showSF,
     putSF,
@@ -48,6 +50,7 @@ import Control.Monad        (ap)
 import Data.Functor.Classes
 import Data.List            (intercalate)
 import Data.Map             (Map)
+import Data.Maybe           (mapMaybe)
 import Prelude ()
 import Prelude.Compat
 
@@ -55,92 +58,39 @@ import Prelude.Compat
 import Text.Show (showListWith)
 #endif
 
-import qualified Data.Map        as Map
-import qualified Test.QuickCheck as QC
+import qualified Data.Function.Step as SF
+import qualified Data.Map           as Map
+import qualified Test.QuickCheck    as QC
 
 -- | Step function. Piecewise constant function, having finitely many pieces.
 -- See <https://en.wikipedia.org/wiki/Step_function>.
 --
--- @'SF' (fromList [('Open' k1, v1), ('Closed' k2, v2)]) v3 :: 'SF' k v@ describes a piecewise constant function \(f : k \to v\):
+-- /Note:/ this variant has discrete domain.
+-- It's enough to have only @<@$, without @≤@, as there is a /next/ element
+-- without any others in between.
+--
+-- @'SF' (fromList [(k1, v1), (k2, v2)]) v3 :: 'SF' k v@ describes a piecewise constant function \(f : k \to v\):
 --
 -- \[
 -- f\,x = \begin{cases}
 -- v_1, \quad x < k_1 \newline
--- v_2, \quad k_1 \le x \le k_2 \newline
--- v_3, \quad k_2 < x
+-- v_2, \quad k_1 \le x < k_2 \newline
+-- v_3, \quad k_2 \le x
 -- \end{cases}
 -- \]
 --
 -- or as you would write in Haskell
 --
 -- @
--- f x | x <  k1   = v1
---     | x <= k2   = v2
+-- f x | x < k1    = v1
+--     | x < k2    = v2
 --     | otherwise = v3
 -- @
 --
--- There is (original) [step-function](https://hackage.haskell.org/package/step-function) package, but its implementation isn't backed by 'Map'.
---
--- /Note:/ [total-map](https://hackage.haskell.org/package/total-map-0.0.6/docs/Data-TotalMap.html) package,
--- which provides /function with finite support/.
---
 -- Constructor is exposed as you cannot construct non-valid 'SF'.
 --
--- === Merging
---
--- You can use 'Applicative' instance to /merge/ 'SF'.
---
--- >>> putSF $ liftA2 (+) (step 0 0 1) (step 1 0 1)
--- \x -> if
---     | x < 0     -> 0
---     | x < 1     -> 1
---     | otherwise -> 2
---
--- Following property holds, i.e. 'SF' and ordinary function 'Applicative' instances
--- are compatible (and '!' is a homomorphism).
---
--- prop> liftA2 f g h ! x == liftA2 f (g !) (h !) x
---
--- Recall that for ordinary functions @'liftA2' f g h x = f (g x) (h x)@.
---
--- === Dense?
---
--- This dense variant is useful with [dense ordered](https://en.wikipedia.org/wiki/Dense_order) domains, e.g. 'Rational'.
--- 'Integer' is not dense, so you could use "Data.Function.Step.Discrete" variant instead.
---
--- >>> let s = fromList [(Open 0, -1),(Closed 0, 0)] 1 :: SF Rational Int
--- >>> putSF s
--- \x -> if
---     | x <  0 % 1 -> -1
---     | x <= 0 % 1 -> 0
---     | otherwise  -> 1
---
--- >>> import Data.Ratio ((%))
--- >>> map (s !) [-1, -0.5, 0, 0.5, 1]
--- [-1,-1,0,1,1]
---
-data SF k v = SF !(Map (Bound k) v) !v
+data SF k v = SF !(Map k v) !v
   deriving (Eq, Ord, Functor, Foldable, Traversable)
-
--- | Bound operations
-data Bound k
-    = Open k   -- ^ less-than, @<@
-    | Closed k -- ^ less-than-or-equal, @≤@.
-  deriving (Eq, Show, Functor, Foldable, Traversable)
-
--- | Order is like @'Open' k = (k, False)@, @'Closed' k = (k, True)@.
---
-instance Ord k => Ord (Bound k) where
-    compare (Open k)   (Open k')   = compare k k'
-    compare (Closed k) (Closed k') = compare k k'
-    compare (Open k)   (Closed k') = case compare k k' of
-        LT -> LT
-        EQ -> LT
-        GT -> GT
-    compare (Closed k) (Open k')   = case compare k k' of
-        LT -> LT
-        EQ -> GT
-        GT -> GT
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -185,13 +135,6 @@ instance (Ord k, QC.Arbitrary k, QC.Arbitrary v) => QC.Arbitrary (SF k v) where
     arbitrary = fromList <$> QC.arbitrary <*> QC.arbitrary
     shrink (SF m v) = uncurry fromList <$> QC.shrink (Map.toList m, v)
 
-instance QC.Arbitrary k => QC.Arbitrary (Bound k) where
-    arbitrary = QC.oneof [Open <$> QC.arbitrary, Closed <$> QC.arbitrary]
-
-instance NFData k => NFData (Bound k) where
-    rnf (Open k) = rnf k
-    rnf (Closed k) = rnf k
-
 instance (NFData k, NFData v) => NFData (SF k v) where
     rnf (SF m v) = rnf (m, v)
 
@@ -200,10 +143,9 @@ instance (NFData k, NFData v) => NFData (SF k v) where
 -------------------------------------------------------------------------------
 
 #if LIFTED_FUNCTOR_CLASSES
-
 instance Show2 SF where
     liftShowsPrec2 spk slk spv slv d (SF m v) = showsBinaryWith
-        (\_ -> showListWith $ liftShowsPrec2 (liftShowsPrec spk slk) (liftShowList spk slk) spv slv 0)
+        (\_ -> showListWith $ liftShowsPrec2 spk slk spv slv 0)
         spv
         "fromList" d (Map.toList m) v
 
@@ -212,10 +154,6 @@ instance Show k => Show1 (SF k) where
 
 instance (Show k, Show v) => Show (SF k v) where
     showsPrec = showsPrec2
-
-instance Show1 Bound where
-    liftShowsPrec sp _ d (Open k)   = showsUnaryWith sp "Open"   d k
-    liftShowsPrec sp _ d (Closed k) = showsUnaryWith sp "Closed" d k
 
 #else
 
@@ -227,9 +165,9 @@ instance (Show k, Show v) => Show (SF k v) where
         . showsPrec 11 v
 
 instance Show k => Show1 (SF k) where showsPrec1 = showsPrec
-instance Show1 Bound where showsPrec1 = showsPrec
 
 #endif
+
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------
@@ -255,7 +193,7 @@ infixl 9 !
 -- >>> heaviside ! 2
 -- 1
 (!) :: Ord k => SF k v -> k -> v
-SF m def ! x = case Map.lookupGE (Closed x) m of
+SF m def ! x = case Map.lookupGT x m of
     Nothing     -> def
     Just (_, v) -> v
 
@@ -281,22 +219,20 @@ constant = SF Map.empty
 --     | otherwise -> 3
 --
 step :: k -> v -> v -> SF k v
-step k = SF . Map.singleton (Open k)
+step k = SF . Map.singleton k
 
 -- | Create function from list of cases and default value.
 --
--- >>> let f = fromList [(Open 1,2),(Closed 3,4),(Open 4,5)] 6
--- >>> putSF f
+-- >>> putSF $ fromList [(1,2),(3,4)] 5
 -- \x -> if
---     | x <  1    -> 2
---     | x <= 3    -> 4
---     | x <  4    -> 5
---     | otherwise -> 6
+--     | x < 1     -> 2
+--     | x < 3     -> 4
+--     | otherwise -> 5
 --
--- >>> map (f !) [0..10]
--- [2,4,4,4,6,6,6,6,6,6,6]
+-- >>> map (fromList [(1,2),(3,4)] 5 !) [0..10]
+-- [2,4,4,5,5,5,5,5,5,5,5]
 --
-fromList :: Ord k => [(Bound k, v)] -> v -> SF k v
+fromList :: Ord k => [(k, v)] -> v -> SF k v
 fromList = SF . Map.fromList
 
 -------------------------------------------------------------------------------
@@ -339,6 +275,52 @@ normalise (SF m v) = uncurry mk $ foldr go ([], v) (Map.toList m) where
         | otherwise = (p : m', v')
 
 -------------------------------------------------------------------------------
+-- Conversions
+-------------------------------------------------------------------------------
+
+-- | Convert from discrete variant to more "dense"
+--
+-- >>> SF.putSF $ toDense $ fromList [(1,2),(3,4)] 5
+-- \x -> if
+--     | x < 1     -> 2
+--     | x < 3     -> 4
+--     | otherwise -> 5
+--
+toDense :: SF a b -> SF.SF a b
+toDense (SF m v) = SF.SF (Map.mapKeysMonotonic SF.Open m) v
+
+-- | Convert from "dense" variant. @<= k@ pieces will be converted to @< 'succ' k@.
+-- There might be less pieces in the ressult 'SF', than in the original.
+--
+-- >>> let f = SF.fromList [(SF.Open 1,2),(SF.Closed 3,4),(SF.Open 4,5)] 6
+-- >>> SF.putSF f
+-- \x -> if
+--     | x <  1    -> 2
+--     | x <= 3    -> 4
+--     | x <  4    -> 5
+--     | otherwise -> 6
+--
+-- >>> putSF $ fromDense (Just . succ) f
+-- \x -> if
+--     | x < 1     -> 2
+--     | x < 4     -> 4
+--     | otherwise -> 6
+--
+fromDense
+    :: Ord a
+    => (a -> Maybe a) -- ^ next key, if exists
+    -> SF.SF a b
+    -> SF a b
+fromDense next (SF.SF m v) = SF (mapKeys m) v where
+    mapKeys = Map.fromListWith (\_ -> id) . mapMaybe (_1 fk) . Map.toList
+
+    fk (SF.Open k)   = Just k
+    fk (SF.Closed k) = next k
+
+    _1 :: Functor f => (a -> f b) -> (a, c) -> f (b, c)
+    _1 f (a, c) = fmap (\b -> (b, c)) (f a)
+
+-------------------------------------------------------------------------------
 -- Pretty-printing
 -------------------------------------------------------------------------------
 
@@ -348,23 +330,10 @@ showSF (SF m v) | Map.null m = "\\_ -> " ++ show v
 showSF (SF m v) = intercalate "\n" $
     "\\x -> if" : [ "    | " ++ leftPad k ++ " -> " ++ x | (k, x) <- cases ]
   where
-    cases     = cases' ++ [ ("otherwise", show v) ]
-
-    m' = Map.toList m
-
-    cases' = case traverse fromOpen m' of
-        Nothing  -> [ ("x " ++ showBound k, show x) | (k, x) <- m' ]
-        Just m'' -> [ ("x < " ++ show k,    show x) | (k, x) <- m'' ]
-
-    fromOpen (Open k, x) = Just (k, x)
-    fromOpen _           = Nothing
-
+    cases     = [ ("x < " ++ showsPrec 5 k "", show x) | (k,x) <- Map.toList m ] ++
+                [ ("otherwise", show v) ]
     len       = maximum (map (length . fst) cases)
     leftPad s = s ++ replicate (len - length s) ' '
-
-showBound :: Show k => Bound k -> String
-showBound (Open k)   = "<  " ++ showsPrec 5 k ""
-showBound (Closed k) = "<= " ++ showsPrec 5 k ""
 
 -- | @'putStrLn' . 'showSF'@
 putSF :: (Show a, Show b) => SF a b -> IO ()

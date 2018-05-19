@@ -64,3 +64,5 @@ library
   exposed-modules:
     Data.Function.Step
     Data.Function.Step.Discrete
+    Data.Function.Step.Discrete.Open
+    Data.Function.Step.Discrete.Closed
