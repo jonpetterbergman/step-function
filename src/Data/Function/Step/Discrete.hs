@@ -3,6 +3,12 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
 
+{-# LANGUAGE Safe #-}
+
+#ifndef MIN_VERSION_transformers
+#define MIN_VERSION_transformers(x,y,z) 0
+#endif
+
 #ifndef MIN_VERSION_transformers_compat
 #define MIN_VERSION_transformers_compat(x,y,z) 0
 #endif
@@ -62,7 +68,7 @@ import qualified Test.QuickCheck    as QC
 -- It's enough to have only @<@$, without @≤@, as there is a /next/ element
 -- without any others in between.
 --
--- @'SF' (fromList [(k1,v1), (k2,v2)]) v3 :: 'SF' k v@ describes a piecewise constant function \(f : k \to v\):
+-- @'SF' (fromList [(k1, v1), (k2, v2)]) v3 :: 'SF' k v@ describes a piecewise constant function \(f : k \to v\):
 --
 -- \[
 -- f\,x = \begin{cases}
@@ -79,11 +85,6 @@ import qualified Test.QuickCheck    as QC
 --     | x < k2    = v2
 --     | otherwise = v3
 -- @
---
--- There is [step-function](https://hackage.haskell.org/package/step-function) package, but its implementation isn't backed by 'Map'.
---
--- /Note:/ [total-map](https://hackage.haskell.org/package/total-map-0.0.6/docs/Data-TotalMap.html) package,
--- which provides /otherwise constant function with finitely different points/.
 --
 -- Constructor is exposed as you cannot construct non-valid 'SF'.
 --
@@ -321,7 +322,7 @@ showSF (SF m v) | Map.null m = "\\_ -> " ++ show v
 showSF (SF m v) = unlines $
     "\\x -> if" : [ "    | " ++ leftPad k ++ " -> " ++ x | (k, x) <- cases ]
   where
-    cases     = [ ("x < " ++ show k, show x) | (k,x) <- Map.toList m ] ++
+    cases     = [ ("x < " ++ showsPrec 5 k "", show x) | (k,x) <- Map.toList m ] ++
                 [ ("otherwise", show v) ]
     len       = maximum (map (length . fst) cases)
     leftPad s = s ++ replicate (len - length s) ' '

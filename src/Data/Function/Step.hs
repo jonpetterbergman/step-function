@@ -3,6 +3,12 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
 
+{-# LANGUAGE Safe #-}
+
+#ifndef MIN_VERSION_transformers
+#define MIN_VERSION_transformers(x,y,z) 0
+#endif
+
 #ifndef MIN_VERSION_transformers_compat
 #define MIN_VERSION_transformers_compat(x,y,z) 0
 #endif
@@ -54,7 +60,7 @@ import qualified Test.QuickCheck as QC
 -- | Step function. Piecewise constant function, having finitely many pieces.
 -- See <https://en.wikipedia.org/wiki/Step_function>.
 --
--- @'SF' (fromList [(Open k1,v1), (Closed k2,v2)]) v3 :: 'SF' k v@ describes a piecewise constant function \(f : k \to v\):
+-- @'SF' (fromList [('Open' k1, v1), ('Closed' k2, v2)]) v3 :: 'SF' k v@ describes a piecewise constant function \(f : k \to v\):
 --
 -- \[
 -- f\,x = \begin{cases}
@@ -72,10 +78,10 @@ import qualified Test.QuickCheck as QC
 --     | otherwise = v3
 -- @
 --
--- There is [step-function](https://hackage.haskell.org/package/step-function) package, but its implementation isn't backed by 'Map'.
+-- There is (original) [step-function](https://hackage.haskell.org/package/step-function) package, but its implementation isn't backed by 'Map'.
 --
 -- /Note:/ [total-map](https://hackage.haskell.org/package/total-map-0.0.6/docs/Data-TotalMap.html) package,
--- which provides /otherwise constant function with finitely different points/.
+-- which provides /function with finite support/.
 --
 -- Constructor is exposed as you cannot construct non-valid 'SF'.
 --
@@ -98,7 +104,8 @@ import qualified Test.QuickCheck as QC
 --
 -- === Dense?
 --
--- This "dense" variant is useful with "dense" domains, e.g. 'Rational'
+-- This dense variant is useful with [dense ordered](https://en.wikipedia.org/wiki/Dense_order) domains, e.g. 'Rational'.
+-- 'Integer' is not dense, so you could use "Data.Function.Step.Discrete" variant instead.
 --
 -- >>> let s = fromList [(Open 0, -1),(Closed 0, 0)] 1 :: SF Rational Int
 -- >>> putSF s
@@ -346,8 +353,8 @@ showSF (SF m v) = unlines $
     leftPad s = s ++ replicate (len - length s) ' '
 
 showBound :: Show k => Bound k -> String
-showBound (Open k)   = "< " ++ show k
-showBound (Closed k) = "<= " ++ show k
+showBound (Open k)   = "< " ++ showsPrec 5 k ""
+showBound (Closed k) = "<= " ++ showsPrec 5 k ""
 
 -- | @'putStr' . 'showSF'@
 putSF :: (Show a, Show b) => SF a b -> IO ()
