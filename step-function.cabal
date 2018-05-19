@@ -1,0 +1,67 @@
+cabal-version:  >= 1.10
+name:           step-function
+version:        0.2
+
+synopsis:       Staircase functions or piecewise constant functions
+category:       Text
+description:
+  Step functions, staircase functions or piecewise constant functions.
+  Implemented as a default value and a series of transitions.
+  Supports merging two step functions using a supplied merging function.
+  .
+
+homepage:       https://github.com/phadej/step-function
+bug-reports:    https://github.com/phadej/stepfunction/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+  README.md
+
+tested-with:
+  GHC==7.4.2
+  GHC==7.6.3
+  GHC==7.8.4
+  GHC==7.10.3
+  GHC==8.0.2
+  GHC==8.2.2
+  GHC==8.4.2
+
+
+source-repository head
+  type: git
+  location: https://github.com/phadej/step-function
+
+library
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  hs-source-dirs:   src
+  build-depends:
+    base                  >=4.5    && <4.12,
+    base-compat-batteries >=0.10.1 && <0.11,
+    deepseq,
+    containers,
+    QuickCheck
+
+  if !impl(ghc >= 8.0)
+    -- We enforce the fact that with GHC-7.10
+    -- we have at least transformers-0.4.2.0 (the bundled one)
+    -- which has 'Data.Functor.Classes' module. (transformers-0.3 doesn't have)
+    if impl(ghc >= 7.10)
+      build-depends:
+        transformers         >= 0.4.2.0 && <0.6
+    else
+      build-depends:
+        transformers         >=0.3.0.0  && <0.6,
+        transformers-compat  >=0.6.2    && <0.7
+
+  other-extensions:
+    DeriveFunctor
+    DeriveFoldable
+    DeriveTraversable
+    OverloadedStrings
+  exposed-modules:
+    Data.Function.Step
+    Data.Function.Step.Discrete
