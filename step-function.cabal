@@ -10,15 +10,16 @@ description:
   Supports merging two step functions using a supplied merging function.
   .
 
-homepage:       https://github.com/phadej/step-function
-bug-reports:    https://github.com/phadej/stepfunction/issues
-author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+homepage:       https://github.com/jonpetterbergman/step-function
+bug-reports:    https://github.com/jonpetterbergman/stepfunction/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>, Petter Bergman <jon.petter.bergman@gmail.com>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
   README.md
+  Changelog.md
 
 tested-with:
   GHC==7.6.3
@@ -28,10 +29,9 @@ tested-with:
   GHC==8.2.2
   GHC==8.4.2
 
-
 source-repository head
   type: git
-  location: https://github.com/phadej/step-function
+  location: https://github.com/jonpetterbergman/step-function
 
 library
   default-language: Haskell2010

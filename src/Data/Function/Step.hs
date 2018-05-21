@@ -79,8 +79,6 @@ import qualified Test.QuickCheck as QC
 --     | otherwise = v3
 -- @
 --
--- There is (original) [step-function](https://hackage.haskell.org/package/step-function) package, but its implementation isn't backed by 'Map'.
---
 -- /Note:/ [total-map](https://hackage.haskell.org/package/total-map-0.0.6/docs/Data-TotalMap.html) package,
 -- which provides /function with finite support/.
 --
