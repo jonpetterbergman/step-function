@@ -1,51 +1,43 @@
-module Merge (tests) where
+module Main (main) where
 
-import           Distribution.TestSuite                    (Test)
-import           Distribution.TestSuite.QuickCheck         (testProperty)
-import           Data.StepFunction                         (StepFunction,
-                                                            mkStepFunction,
-                                                            Transition(..),
-                                                            valAt,
-                                                            merge)
-import           Test.QuickCheck                           (quickCheck)
-import           Test.QuickCheck.Arbitrary                 (Arbitrary(..))
-import           Test.QuickCheck.Property                  ((===),
-                                                            Property,
-                                                            counterexample)
-import           Control.Applicative                       ((<*>),(<$>))
+import Control.Applicative               (liftA2)
+import Data.Function.Step
+       (SF, (!))
+import Test.QuickCheck                   (quickCheck)
+import Test.QuickCheck.Arbitrary         (Arbitrary (..))
+import Test.QuickCheck.Property          (Property, counterexample, (===))
 
-instance (Arbitrary x,Arbitrary y) => Arbitrary (Transition x y) where
-  arbitrary = Transition <$> arbitrary <*> arbitrary <*> arbitrary
+merge :: Ord x => (a -> b -> c) -> SF x a -> SF x b -> SF x c
+merge = liftA2
 
-instance (Arbitrary x,Arbitrary y, Eq y, Ord x) => Arbitrary (StepFunction x y) where
-  arbitrary = mkStepFunction <$> arbitrary <*> arbitrary
-
-mergeProp :: (Eq c, Ord x, Show c,Show x)
-          => (a -> b -> c)
-          -> x
-          -> StepFunction x a
-          -> StepFunction x b
-          -> Property
+mergeProp
+    :: (Eq c, Ord x, Show c,Show x)
+    => (a -> b -> c)
+    -> x
+    -> SF x a
+    -> SF x b
+    -> Property
 mergeProp f x sf1 sf2 =
-  let merged = merge f sf1 sf2 in
-  counterexample ("merged: " ++ show merged) $
-  valAt x merged === f (valAt x sf1) (valAt x sf2)
+    counterexample ("merged: " ++ show merged) $
+    merged ! x === f (sf1 ! x) (sf2 ! x)
+  where
+    merged = merge f sf1 sf2
 
-tests :: IO [Test]
-tests = return [testProperty "merge: Int addition"
-                (mergeProp (+) :: Int -> StepFunction Int Int -> StepFunction Int Int -> Property),
-                testProperty "merge: Int subtraction"
-                (mergeProp (-) :: Int -> StepFunction Int Int -> StepFunction Int Int -> Property),
-                testProperty "merge: Int multiplication"
-                (mergeProp (*) :: Int -> StepFunction Int Int -> StepFunction Int Int -> Property),
-                testProperty "merge: Bool logical or"
-                (mergeProp (||) :: Bool -> StepFunction Bool Bool -> StepFunction Bool Bool -> Property),
-                testProperty "merge: Bool logical and"
-                (mergeProp (&&) :: Bool -> StepFunction Bool Bool -> StepFunction Bool Bool -> Property),
-                testProperty "merge: Double addition"
-                (mergeProp (+) :: Double -> StepFunction Double Double -> StepFunction Double Double -> Property),
-                testProperty "merge: Double subtraction"
-                (mergeProp (-) :: Double -> StepFunction Double Double -> StepFunction Double Double -> Property),
-                testProperty "merge: Double multiplication"
-                (mergeProp (*) :: Double -> StepFunction Double Double -> StepFunction Double Double -> Property)]
-
+main :: IO ()
+main = do
+    -- "merge: Int addition"
+    quickCheck (mergeProp (+) :: Int -> SF Int Int -> SF Int Int -> Property)
+    -- "merge: Int subtraction"
+    quickCheck (mergeProp (-) :: Int -> SF Int Int -> SF Int Int -> Property)
+    -- "merge: Int multiplication"
+    quickCheck (mergeProp (*) :: Int -> SF Int Int -> SF Int Int -> Property)
+    -- "merge: Bool logical or"
+    quickCheck (mergeProp (||) :: Bool -> SF Bool Bool -> SF Bool Bool -> Property)
+    -- "merge: Bool logical and"
+    quickCheck (mergeProp (&&) :: Bool -> SF Bool Bool -> SF Bool Bool -> Property)
+    -- "merge: Double addition"
+    quickCheck (mergeProp (+) :: Double -> SF Double Double -> SF Double Double -> Property)
+    -- "merge: Double subtraction"
+    quickCheck (mergeProp (-) :: Double -> SF Double Double -> SF Double Double -> Property)
+    -- "merge: Double multiplication"
+    quickCheck (mergeProp (*) :: Double -> SF Double Double -> SF Double Double -> Property)
