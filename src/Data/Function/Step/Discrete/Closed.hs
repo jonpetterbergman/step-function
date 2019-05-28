@@ -44,13 +44,13 @@ module Data.Function.Step.Discrete.Closed (
     putSF,
     ) where
 
-import Control.Applicative   (liftA2)
-import Control.DeepSeq       (NFData (..))
-import Control.Monad         (ap)
-import Data.Maybe (mapMaybe)
+import Control.Applicative  (liftA2)
+import Control.DeepSeq      (NFData (..))
+import Control.Monad        (ap)
 import Data.Functor.Classes
-import Data.List             (intercalate)
-import Data.Map              (Map)
+import Data.List            (intercalate)
+import Data.Map             (Map)
+import Data.Maybe           (mapMaybe)
 import Prelude ()
 import Prelude.Compat
 
@@ -291,7 +291,7 @@ toDense :: SF a b -> SF.SF a b
 toDense (SF m v) = SF.SF (Map.mapKeysMonotonic SF.Closed m) v
 
 -- | Convert from "dense" variant. @<= k@ pieces will be converted to @< 'succ' k@.
--- There might be less pieces in the ressult 'SF', than in the original.
+-- There might be less pieces in the result 'SF', than in the original.
 --
 -- >>> let f = SF.fromList [(SF.Open 1,2),(SF.Closed 3,4),(SF.Open 4,5)] 6
 -- >>> SF.putSF f
