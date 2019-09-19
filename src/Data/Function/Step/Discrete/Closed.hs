@@ -44,13 +44,13 @@ module Data.Function.Step.Discrete.Closed (
     putSF,
     ) where
 
-import Control.Applicative   (liftA2)
-import Control.DeepSeq       (NFData (..))
-import Control.Monad         (ap)
-import Data.Maybe (mapMaybe)
+import Control.Applicative  (liftA2)
+import Control.DeepSeq      (NFData (..))
+import Control.Monad        (ap)
 import Data.Functor.Classes
-import Data.List             (intercalate)
-import Data.Map              (Map)
+import Data.List            (intercalate)
+import Data.Map             (Map)
+import Data.Maybe           (mapMaybe)
 import Prelude ()
 import Prelude.Compat
 
