@@ -97,7 +97,7 @@ import qualified Test.QuickCheck as QC
 -- Following property holds, i.e. 'SF' and ordinary function 'Applicative' instances
 -- are compatible (and '!' is a homomorphism).
 --
--- prop> liftA2 f g h ! x == liftA2 f (g !) (h !) x
+-- prop> liftA2 (applyFun2 f) g h ! x == liftA2 (applyFun2 f :: A -> B -> C) (g !) (h !) (x :: Int)
 --
 -- Recall that for ordinary functions @'liftA2' f g h x = f (g x) (h x)@.
 --
@@ -369,6 +369,9 @@ putSF :: (Show a, Show b) => SF a b -> IO ()
 putSF = putStrLn . showSF
 
 -- $setup
+--
+-- >>> import Test.QuickCheck (applyFun2)
+-- >>> import Test.QuickCheck.Poly (A, B, C)
 --
 -- == Examples
 --

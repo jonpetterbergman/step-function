@@ -1,11 +1,9 @@
 build :
-	cabal new-build
+	cabal v2-build
 
 doctest :
-	mv .ghc.environment.x86_64-linux-8.2.2 tmp
-	grep -v base-compat-0 tmp > .ghc.environment.x86_64-linux-8.2.2
-	rm tmp
-	doctest --fast src/
+	perl -i -e 'while (<ARGV>) { print unless /package-id base-compat-\d+(\.\d+)*/; }' .ghc.environment.*
+	doctest src
 
 haddock :
-	cabal new-haddock --haddock-hyperlink-source
+	cabal v2-haddock --haddock-hyperlink-source
