@@ -291,7 +291,7 @@ toDense :: SF a b -> SF.SF a b
 toDense (SF m v) = SF.SF (Map.mapKeysMonotonic SF.Closed m) v
 
 -- | Convert from "dense" variant. @<= k@ pieces will be converted to @< 'succ' k@.
--- There might be less pieces in the ressult 'SF', than in the original.
+-- There might be less pieces in the result 'SF', than in the original.
 --
 -- >>> let f = SF.fromList [(SF.Open 1,2),(SF.Closed 3,4),(SF.Open 4,5)] 6
 -- >>> SF.putSF f

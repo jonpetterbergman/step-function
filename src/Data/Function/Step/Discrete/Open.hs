@@ -223,13 +223,14 @@ step k = SF . Map.singleton k
 
 -- | Create function from list of cases and default value.
 --
--- >>> putSF $ fromList [(1,2),(3,4)] 5
+-- >>> let f = fromList [(1,2),(3,4)] 5
+-- >>> putSF f
 -- \x -> if
 --     | x < 1     -> 2
 --     | x < 3     -> 4
 --     | otherwise -> 5
 --
--- >>> map (fromList [(1,2),(3,4)] 5 !) [0..10]
+-- >>> map (f !) [0..10]
 -- [2,4,4,5,5,5,5,5,5,5,5]
 --
 fromList :: Ord k => [(k, v)] -> v -> SF k v
@@ -290,7 +291,7 @@ toDense :: SF a b -> SF.SF a b
 toDense (SF m v) = SF.SF (Map.mapKeysMonotonic SF.Open m) v
 
 -- | Convert from "dense" variant. @<= k@ pieces will be converted to @< 'succ' k@.
--- There might be less pieces in the ressult 'SF', than in the original.
+-- There might be less pieces in the result 'SF', than in the original.
 --
 -- >>> let f = SF.fromList [(SF.Open 1,2),(SF.Closed 3,4),(SF.Open 4,5)] 6
 -- >>> SF.putSF f
