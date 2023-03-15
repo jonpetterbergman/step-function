@@ -1,3 +1,3 @@
 branches: master
-doctest: <8.10
-doctest-filter-packages: base-compat
+docspec: True
+docspec-options: --check-properties "--property-variables='p f g h x'"

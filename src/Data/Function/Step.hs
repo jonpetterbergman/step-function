@@ -42,17 +42,27 @@ module Data.Function.Step (
     putSF,
     ) where
 
-import Control.Applicative  (liftA2)
+import Control.Applicative  (Applicative (pure, (<*>)), liftA2, (<$>))
 import Control.DeepSeq      (NFData (..))
 import Control.Monad        (ap)
 import Data.Functor.Classes
 import Data.List            (intercalate)
 import Data.Map             (Map)
-import Prelude ()
-import Prelude.Compat
+
+import Prelude
+       (Eq (..), Functor, IO, Maybe (..), Monad (..), Ord (..), Ordering (..),
+       Show (..), String, fst, length, map, otherwise, putStrLn, replicate,
+       uncurry, ($), (++), (-), (.))
+
+import Data.Foldable    (Foldable, foldr, maximum)
+import Data.Monoid      (Monoid (..))
+import Data.Semigroup   (Semigroup (..))
+import Data.Traversable (Traversable (traverse))
 
 #ifdef LIFTED_FUNCTOR_CLASSES
 import Text.Show (showListWith)
+#else
+import Prelude (showChar, showParen, showString)
 #endif
 
 import qualified Data.Map        as Map
@@ -372,6 +382,8 @@ putSF = putStrLn . showSF
 --
 -- >>> import Test.QuickCheck (applyFun2)
 -- >>> import Test.QuickCheck.Poly (A, B, C)
+-- >>> import Control.Applicative (liftA2, pure)
+-- >>> import Data.Semigroup (Semigroup (..))
 --
 -- == Examples
 --

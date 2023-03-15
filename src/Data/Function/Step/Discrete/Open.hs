@@ -44,18 +44,28 @@ module Data.Function.Step.Discrete.Open (
     putSF,
     ) where
 
-import Control.Applicative  (liftA2)
+import Control.Applicative  (Applicative (pure, (<*>)), liftA2, (<$>))
 import Control.DeepSeq      (NFData (..))
 import Control.Monad        (ap)
 import Data.Functor.Classes
 import Data.List            (intercalate)
 import Data.Map             (Map)
 import Data.Maybe           (mapMaybe)
-import Prelude ()
-import Prelude.Compat
+
+import Prelude
+       (Eq (..), Functor (fmap), IO, Maybe (..), Monad (..), Ord (..),
+       Show (..), String, fst, id, length, map, min, otherwise, putStrLn,
+       replicate, uncurry, ($), (++), (-), (.))
+
+import Data.Foldable    (Foldable, foldr, maximum)
+import Data.Monoid      (Monoid (..))
+import Data.Semigroup   (Semigroup (..))
+import Data.Traversable (Traversable)
 
 #ifdef LIFTED_FUNCTOR_CLASSES
 import Text.Show (showListWith)
+#else
+import Prelude (showChar, showParen, showString)
 #endif
 
 import qualified Data.Function.Step as SF
@@ -340,6 +350,10 @@ putSF :: (Show a, Show b) => SF a b -> IO ()
 putSF = putStrLn . showSF
 
 -- $setup
+--
+-- >>> import Control.Applicative (liftA2, pure)
+-- >>> import qualified Data.Function.Step as SF
+-- >>> import Data.Semigroup (Semigroup (..))
 --
 -- == Examples
 --
