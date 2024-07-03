@@ -1,27 +1,8 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
 
 {-# LANGUAGE Safe              #-}
-
-#ifndef MIN_VERSION_transformers
-#define MIN_VERSION_transformers(x,y,z) 0
-#endif
-
-#ifndef MIN_VERSION_transformers_compat
-#define MIN_VERSION_transformers_compat(x,y,z) 0
-#endif
-
-#if MIN_VERSION_base(4,9,0)
-#define LIFTED_FUNCTOR_CLASSES 1
-
-#elif MIN_VERSION_transformers(0,5,0)
-#define LIFTED_FUNCTOR_CLASSES 1
-
-#elif MIN_VERSION_transformers_compat(0,5,0) && !MIN_VERSION_transformers(0,4,0)
-#define LIFTED_FUNCTOR_CLASSES 1
-#endif
 
 module Data.Function.Step.Discrete.Closed (
     -- * Step Function
@@ -62,11 +43,7 @@ import Data.Monoid      (Monoid (..))
 import Data.Semigroup   (Semigroup (..))
 import Data.Traversable (Traversable)
 
-#ifdef LIFTED_FUNCTOR_CLASSES
 import Text.Show (showListWith)
-#else
-import Prelude (showChar, showParen, showString)
-#endif
 
 import qualified Data.Function.Step as SF
 import qualified Data.Map           as Map
@@ -152,7 +129,6 @@ instance (NFData k, NFData v) => NFData (SF k v) where
 -- Show
 -------------------------------------------------------------------------------
 
-#if LIFTED_FUNCTOR_CLASSES
 instance Show2 SF where
     liftShowsPrec2 spk slk spv slv d (SF m v) = showsBinaryWith
         (\_ -> showListWith $ liftShowsPrec2 spk slk spv slv 0)
@@ -164,19 +140,6 @@ instance Show k => Show1 (SF k) where
 
 instance (Show k, Show v) => Show (SF k v) where
     showsPrec = showsPrec2
-
-#else
-
-instance (Show k, Show v) => Show (SF k v) where
-    showsPrec d (SF m v) = showParen (d > 10)
-        $ showString "fromList"
-        . showsPrec 11 (Map.toList m)
-        . showChar ' '
-        . showsPrec 11 v
-
-instance Show k => Show1 (SF k) where showsPrec1 = showsPrec
-
-#endif
 
 -------------------------------------------------------------------------------
 -- Helpers
