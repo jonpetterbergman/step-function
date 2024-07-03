@@ -1,27 +1,8 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
 
 {-# LANGUAGE Safe              #-}
-
-#ifndef MIN_VERSION_transformers
-#define MIN_VERSION_transformers(x,y,z) 0
-#endif
-
-#ifndef MIN_VERSION_transformers_compat
-#define MIN_VERSION_transformers_compat(x,y,z) 0
-#endif
-
-#if MIN_VERSION_base(4,9,0)
-#define LIFTED_FUNCTOR_CLASSES 1
-
-#elif MIN_VERSION_transformers(0,5,0)
-#define LIFTED_FUNCTOR_CLASSES 1
-
-#elif MIN_VERSION_transformers_compat(0,5,0) && !MIN_VERSION_transformers(0,4,0)
-#define LIFTED_FUNCTOR_CLASSES 1
-#endif
 
 module Data.Function.Step (
     -- * Step Function
@@ -59,11 +40,7 @@ import Data.Monoid      (Monoid (..))
 import Data.Semigroup   (Semigroup (..))
 import Data.Traversable (Traversable (traverse))
 
-#ifdef LIFTED_FUNCTOR_CLASSES
 import Text.Show (showListWith)
-#else
-import Prelude (showChar, showParen, showString)
-#endif
 
 import qualified Data.Map        as Map
 import qualified Test.QuickCheck as QC
@@ -207,8 +184,6 @@ instance (NFData k, NFData v) => NFData (SF k v) where
 -- Show
 -------------------------------------------------------------------------------
 
-#if LIFTED_FUNCTOR_CLASSES
-
 instance Show2 SF where
     liftShowsPrec2 spk slk spv slv d (SF m v) = showsBinaryWith
         (\_ -> showListWith $ liftShowsPrec2 (liftShowsPrec spk slk) (liftShowList spk slk) spv slv 0)
@@ -225,19 +200,6 @@ instance Show1 Bound where
     liftShowsPrec sp _ d (Open k)   = showsUnaryWith sp "Open"   d k
     liftShowsPrec sp _ d (Closed k) = showsUnaryWith sp "Closed" d k
 
-#else
-
-instance (Show k, Show v) => Show (SF k v) where
-    showsPrec d (SF m v) = showParen (d > 10)
-        $ showString "fromList"
-        . showsPrec 11 (Map.toList m)
-        . showChar ' '
-        . showsPrec 11 v
-
-instance Show k => Show1 (SF k) where showsPrec1 = showsPrec
-instance Show1 Bound where showsPrec1 = showsPrec
-
-#endif
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------
