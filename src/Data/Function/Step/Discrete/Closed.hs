@@ -89,7 +89,6 @@ instance Ord k => Applicative (SF k) where
     (<*>) = ap
 
 instance Ord k => Monad (SF k) where
-    return = pure
 
     SF m def0 >>= f = SF
         (Map.fromDistinctAscList $ mkDistinctAscList $ pieces ++ pieces1)
@@ -116,7 +115,6 @@ instance (Ord k, Semigroup v) => Semigroup (SF k v) where
 
 instance (Ord k, Monoid v) => Monoid (SF k v) where
     mempty = pure mempty
-    mappend = liftA2 mappend
 
 instance (Ord k, QC.Arbitrary k, QC.Arbitrary v) => QC.Arbitrary (SF k v) where
     arbitrary = fromList <$> QC.arbitrary <*> QC.arbitrary
